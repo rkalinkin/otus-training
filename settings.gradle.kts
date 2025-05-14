@@ -2,6 +2,9 @@ rootProject.name = "otus-training"
 include("hw01-gradle")
 
 
+include("lec02-logging")
+
+
 pluginManagement {
     val jgitver: String by settings
     val dependencyManagement: String by settings
