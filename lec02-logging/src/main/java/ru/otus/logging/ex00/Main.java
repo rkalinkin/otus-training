@@ -17,6 +17,6 @@ public class Main {
         logger.warn("WARN сообщение");
         logger.error("ERROR сообщение");
 
-        System.out.println("Лог записан в файл logs/application.log");
+        System.out.println("Лог записан в файл lec02-logging/logs/application.log");
     }
 }
