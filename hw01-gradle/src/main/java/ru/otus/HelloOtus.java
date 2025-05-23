@@ -1,10 +1,9 @@
 package ru.otus;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HelloOtus {
     public static void main(String[] args) {
@@ -18,10 +17,9 @@ public class HelloOtus {
         System.out.println();
 
         ImmutableMap<String, Integer> ages = ImmutableMap.of(
-            "Alice", 30,
-            "Bob", 25,
-            "Charlie", 35
-        );
+                "Alice", 30,
+                "Bob", 25,
+                "Charlie", 35);
         System.out.println(ages.get("Bob"));
 
         List<Integer> example = new ArrayList<>();
