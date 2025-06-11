@@ -29,10 +29,13 @@ public class Runner {
         List<Method> afterMethods = getAnnotatedMethods(methods, After.class);
         List<Method> testMethods = getAnnotatedMethods(methods, Test.class);
 
+        totalTests = testMethods.size();
+
         for (Method testMethod : testMethods) {
             runTest(testClass, beforeMethods, testMethod, afterMethods);
         }
 
+        failedTests = totalTests - passedTests;
         printSummary();
     }
 
@@ -51,20 +54,29 @@ public class Runner {
         try {
             Object instance = testClass.getDeclaredConstructor().newInstance();
 
-            invokeAll(instance, beforeMethods);
-            invokeTestMethod(instance, testMethod);
-            invokeAll(instance, afterMethods);
+            try {
+                invokeAll(instance, beforeMethods);
 
-            passedTests++;
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            logger.error("Test failed: {} - {}", testMethod.getName(), cause.getMessage(), cause);
-            failedTests++;
+                try {
+                    invokeTestMethod(instance, testMethod);
+                    passedTests++;
+                } catch (InvocationTargetException e) {
+                    Throwable cause = e.getCause();
+                    logger.error("Test failed: {} - {}", testMethod.getName(), cause.getMessage(), cause);
+                } catch (Exception e) {
+                    logger.error("Error during test execution: {}", testMethod.getName(), e);
+                }
+
+            } finally {
+                try {
+                    invokeAll(instance, afterMethods);
+                } catch (Exception e) {
+                    logger.error("Exception in @After methods of '{}'", testMethod.getName(), e);
+                }
+            }
+
         } catch (Exception e) {
-            logger.error("Error during test execution: {}", testMethod.getName(), e);
-            failedTests++;
-        } finally {
-            totalTests++;
+            logger.error("Failed to create instance or unexpected error in '{}'", testMethod.getName(), e);
         }
     }
 
