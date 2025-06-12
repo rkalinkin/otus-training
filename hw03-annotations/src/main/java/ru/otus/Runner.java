@@ -14,9 +14,7 @@ public class Runner {
 
     private static final Logger logger = LoggerFactory.getLogger(Runner.class);
 
-    private int totalTests = 0;
     private int passedTests = 0;
-    private int failedTests = 0;
 
     public static void run(Class<?> testClass) {
         new Runner().runTests(testClass);
@@ -29,14 +27,11 @@ public class Runner {
         List<Method> afterMethods = getAnnotatedMethods(methods, After.class);
         List<Method> testMethods = getAnnotatedMethods(methods, Test.class);
 
-        totalTests = testMethods.size();
-
         for (Method testMethod : testMethods) {
             runTest(testClass, beforeMethods, testMethod, afterMethods);
         }
 
-        failedTests = totalTests - passedTests;
-        printSummary();
+        printSummary(testMethods.size(), passedTests);
     }
 
     private List<Method> getAnnotatedMethods(
@@ -90,7 +85,7 @@ public class Runner {
         testMethod.invoke(instance);
     }
 
-    private void printSummary() {
+    private void printSummary(int totalTests, int passedTests) {
         logger.info(
                 """
                 \n--- Test Summary ---
@@ -99,6 +94,6 @@ public class Runner {
                 Failed: {}""",
                 totalTests,
                 passedTests,
-                failedTests);
+                totalTests - passedTests);
     }
 }
