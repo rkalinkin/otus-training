@@ -21,8 +21,10 @@ public class CalcDemo {
         var summator = new Summator();
         long startTime = System.currentTimeMillis();
 
+        Data data = new Data(0);
+
         for (var idx = 0; idx < counter; idx++) {
-            var data = new Data(idx);
+            data.setValue(idx);
             summator.calc(data);
 
             if (idx % 10_000_000 == 0) {
