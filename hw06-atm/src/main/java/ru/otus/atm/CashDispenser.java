@@ -3,50 +3,57 @@ package ru.otus.atm;
 import java.util.*;
 
 public class CashDispenser {
-    private final Map<Integer, Cell> cells = new TreeMap<>(Collections.reverseOrder());
+    private final List<Cell> cells = new ArrayList<>();
 
     public void addCell(Cell cell) {
-        int denomination = cell.getDenomination();
-        if (cells.containsKey(denomination)) {
-            cells.get(denomination).addBanknotes(cell.getCount());
-        } else {
-            cells.put(denomination, cell);
+        Objects.requireNonNull(cell, "Cell cannot be null");
+
+        for (Cell value : cells) {
+            if (value.getDenomination() == cell.getDenomination()) {
+                value.addBanknotes(cell.getCount());
+                return;
+            }
         }
+        cells.add(cell);
+        sortCellsByDenominationDescending();
     }
 
-    public Cell getCell(int denomination) {
-        Cell cell = cells.get(denomination);
-        if (cell == null) {
-            throw new IllegalArgumentException("Denomination not supported: " + denomination);
-        }
-        return cell;
+    private void sortCellsByDenominationDescending() {
+        cells.sort((c1, c2) -> Integer.compare(
+                c2.getDenomination().getValue(), c1.getDenomination().getValue()));
     }
 
-    public List<Integer> getAvailableDenominations() {
-        return new ArrayList<>(cells.keySet());
+    public void addBanknotes(Denomination denomination, int count) throws InvalidDenominationException {
+        for (Cell cell : cells) {
+            if (cell.getDenomination() == denomination) {
+                cell.addBanknotes(count);
+                return;
+            }
+        }
+        throw new InvalidDenominationException("Denomination not supported: " + denomination);
     }
 
     public int getTotalBalance() {
-        return cells.entrySet().stream()
-                .mapToInt(entry -> entry.getKey() * entry.getValue().getCount())
+        return cells.stream()
+                .mapToInt(cell -> cell.getDenomination().getValue() * cell.getCount())
                 .sum();
     }
 
     public List<Integer> dispense(int amount) throws NotEnoughMoneyException {
-        if (amount < 0) throw new IllegalArgumentException("Amount must be positive");
+        if (amount < 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
 
-        Map<Integer, Integer> originalState = new HashMap<>();
-        for (var entry : cells.entrySet()) {
-            originalState.put(entry.getKey(), entry.getValue().getCount());
+        Map<Denomination, Integer> originalState = new HashMap<>();
+        for (Cell cell : cells) {
+            originalState.put(cell.getDenomination(), cell.getCount());
         }
 
         List<Integer> result = new ArrayList<>();
         int remaining = amount;
 
-        for (Map.Entry<Integer, Cell> entry : cells.entrySet()) {
-            int denomination = entry.getKey();
-            Cell cell = entry.getValue();
-
+        for (Cell cell : cells) {
+            int denomination = cell.getDenomination().getValue();
             int quantity = remaining / denomination;
             int toTake = Math.min(quantity, cell.getCount());
 
@@ -59,9 +66,12 @@ public class CashDispenser {
         }
 
         if (remaining != 0) {
-            for (Map.Entry<Integer, Integer> entry : originalState.entrySet()) {
-                Cell cell = cells.get(entry.getKey());
-                cell.addBanknotes(entry.getValue() - cell.getCount());
+            for (Map.Entry<Denomination, Integer> entry : originalState.entrySet()) {
+                for (Cell cell : cells) {
+                    if (cell.getDenomination() == entry.getKey()) {
+                        cell.setCount(entry.getValue());
+                    }
+                }
             }
             throw new NotEnoughMoneyException("Cannot dispense exact amount: " + amount);
         }

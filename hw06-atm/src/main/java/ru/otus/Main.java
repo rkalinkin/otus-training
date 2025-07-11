@@ -6,17 +6,16 @@ import ru.otus.atm.*;
 public class Main {
     public static void main(String[] args) {
         CashDispenser dispenser = new CashDispenser();
-        dispenser.addCell(new Cell(5000));
-        dispenser.addCell(new Cell(2000));
-        dispenser.addCell(new Cell(1000));
+        dispenser.addCell(new Cell(Denomination.RUB_5000));
+        dispenser.addCell(new Cell(Denomination.RUB_2000));
+        dispenser.addCell(new Cell(Denomination.RUB_1000));
 
-        ATM atm = new ATM(dispenser);
+        ATM atm = new ATMImpl(dispenser);
 
         try {
-            System.out.println("Loading cash...");
-            dispenser.getCell(5000).addBanknotes(10);
-            dispenser.getCell(2000).addBanknotes(5);
-            dispenser.getCell(1000).addBanknotes(20);
+            dispenser.addBanknotes(Denomination.RUB_5000, 10);
+            dispenser.addBanknotes(Denomination.RUB_2000, 5);
+            dispenser.addBanknotes(Denomination.RUB_1000, 20);
 
             System.out.println("Total balance: " + atm.checkBalance());
 

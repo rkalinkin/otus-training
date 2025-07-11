@@ -1,15 +1,15 @@
 package ru.otus.atm;
 
 public class Cell {
-    private final int denomination;
+    private final Denomination denomination;
     private int count;
 
-    public Cell(int denomination) {
+    public Cell(Denomination denomination) {
         this.denomination = denomination;
         this.count = 0;
     }
 
-    public int getDenomination() {
+    public Denomination getDenomination() {
         return denomination;
     }
 
@@ -18,12 +18,23 @@ public class Cell {
     }
 
     public void addBanknotes(int count) {
-        if (count < 0) throw new IllegalArgumentException("Count cannot be negative");
+        if (count < 0) {
+            throw new IllegalArgumentException("Count cannot be negative");
+        }
         this.count += count;
     }
 
     public void withdrawBanknote() {
-        if (count == 0) throw new IllegalStateException("No banknotes available");
+        if (count == 0) {
+            throw new IllegalStateException("No banknotes available");
+        }
         count--;
+    }
+
+    public void setCount(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("Count cannot be negative");
+        }
+        this.count = count;
     }
 }

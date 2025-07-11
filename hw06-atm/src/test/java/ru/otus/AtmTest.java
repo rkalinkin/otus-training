@@ -16,15 +16,19 @@ class AtmTest {
     @BeforeEach
     void setUp() {
         CashDispenser cashDispenser = new CashDispenser();
-        cashDispenser.addCell(new Cell(5000));
-        cashDispenser.addCell(new Cell(2000));
-        cashDispenser.addCell(new Cell(1000));
+        cashDispenser.addCell(new Cell(Denomination.RUB_5000));
+        cashDispenser.addCell(new Cell(Denomination.RUB_2000));
+        cashDispenser.addCell(new Cell(Denomination.RUB_1000));
 
-        cashDispenser.getCell(5000).addBanknotes(10);
-        cashDispenser.getCell(2000).addBanknotes(10);
-        cashDispenser.getCell(1000).addBanknotes(10);
+        try {
+            cashDispenser.addBanknotes(Denomination.RUB_5000, 10);
+            cashDispenser.addBanknotes(Denomination.RUB_2000, 10);
+            cashDispenser.addBanknotes(Denomination.RUB_1000, 10);
+        } catch (InvalidDenominationException e) {
+            fail("Unexpected InvalidDenominationException during setup", e);
+        }
 
-        atm = new ATM(cashDispenser);
+        atm = new ATMImpl(cashDispenser);
     }
 
     @Test
@@ -53,7 +57,7 @@ class AtmTest {
     }
 
     @Test
-    @DisplayName("выдача мелкими купюрами")
+    @DisplayName("выдача мелкими купюрами когда крупные закончились")
     void testWithdrawOnlySmallerNotes() throws Exception {
         for (int i = 0; i < 10; i++) {
             atm.withdraw(2000); // тратим все 2000
@@ -74,7 +78,8 @@ class AtmTest {
     @Test
     @DisplayName("выбросить InvalidDenominationException когда используем несуществующий номинал")
     void testInvalidDenomination() {
-        Exception exception = assertThrows(InvalidDenominationException.class, () -> atm.loadCash(123, 10));
+        Exception exception =
+                assertThrows(InvalidDenominationException.class, () -> atm.loadCash(Denomination.fromValue(123), 10));
 
         assertTrue(exception.getMessage().contains("Denomination not supported"));
     }
