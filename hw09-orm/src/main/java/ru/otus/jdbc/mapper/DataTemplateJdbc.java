@@ -10,7 +10,7 @@ import ru.otus.core.repository.DataTemplate;
 import ru.otus.core.repository.DataTemplateException;
 import ru.otus.core.repository.executor.DbExecutor;
 
-/** Сохратяет объект в базу, читает объект из базы */
+/** Сохраняет объект в базу, читает объект из базы */
 public class DataTemplateJdbc<T> implements DataTemplate<T> {
 
     private final DbExecutor dbExecutor;
@@ -33,19 +33,30 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
     @Override
     public List<T> findAll(Connection connection) {
         return dbExecutor
-                .executeSelect(
-                        connection, entitySQLMetaData.getSelectAllSql(), Collections.emptyList(), this::getAllInstances)
-                .orElseThrow(() -> new RuntimeException("Unexpected error"));
+                .executeSelect(connection, entitySQLMetaData.getSelectAllSql(), Collections.emptyList(), rs -> {
+                    List<T> resultList = new ArrayList<>();
+                    try {
+                        while (rs.next()) {
+                            resultList.add(createInstance(rs));
+                        }
+                    } catch (Exception e) {
+                        throw new DataTemplateException(e);
+                    }
+                    return resultList;
+                })
+                .orElse(new ArrayList<>());
     }
 
     @Override
     public long insert(Connection connection, T client) {
-        return dbExecutor.executeStatement(connection, entitySQLMetaData.getInsertSql(), getParams(client));
+        return dbExecutor.executeStatement(connection, entitySQLMetaData.getInsertSql(), getParamsWithoutId(client));
     }
 
     @Override
     public void update(Connection connection, T client) {
-        dbExecutor.executeStatement(connection, entitySQLMetaData.getUpdateSql(), getParams(client));
+        List<Object> params = new ArrayList<>(getParamsWithoutId(client));
+        params.add(getId(client));
+        dbExecutor.executeStatement(connection, entitySQLMetaData.getUpdateSql(), params);
     }
 
     private T getFirstInstance(ResultSet rs) {
@@ -53,10 +64,10 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
             if (rs.next()) {
                 return createInstance(rs);
             }
+            return null;
         } catch (Exception e) {
             throw new DataTemplateException(e);
         }
-        return null;
     }
 
     private T createInstance(ResultSet rs) throws Exception {
@@ -81,15 +92,24 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
         }
     }
 
-    private List<Object> getParams(T client) {
+    private List<Object> getParamsWithoutId(T client) {
         try {
-            var params = new ArrayList<>();
+            var params = new ArrayList<Object>();
             for (var field : entityClassMetaData.getFieldsWithoutId()) {
                 field.setAccessible(true);
-                var value = field.get(client);
-                params.add(value);
+                params.add(field.get(client));
             }
             return params;
+        } catch (Exception e) {
+            throw new DataTemplateException(e);
+        }
+    }
+
+    private Object getId(T client) {
+        try {
+            var idField = entityClassMetaData.getIdField();
+            idField.setAccessible(true);
+            return idField.get(client);
         } catch (Exception e) {
             throw new DataTemplateException(e);
         }
