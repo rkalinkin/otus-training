@@ -12,10 +12,8 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -61,35 +59,45 @@ public class Client implements Cloneable {
     }
 
     public void setAddress(Address address) {
-        this.address = Optional.ofNullable(address)
-                .map(a -> {
-                    var clonedAddress = new Address(a.getId(), a.getStreet());
-                    clonedAddress.setClient(this);
-                    return clonedAddress;
-                })
-                .orElse(null);
+        this.address = address;
+        if (address != null) {
+            address.setClient(this);
+        }
     }
 
     public void setPhones(List<Phone> phones) {
-        this.phones = Optional.ofNullable(phones).orElse(Collections.emptyList()).stream()
-                .map(phone -> {
-                    var clonedPhone = new Phone(phone.getId(), phone.getNumber());
-                    clonedPhone.setClient(this);
-                    return clonedPhone;
-                })
-                .toList();
+        this.phones = phones != null ? new ArrayList<>(phones) : new ArrayList<>();
+        this.phones.forEach(phone -> {
+            if (phone != null) {
+                phone.setClient(this);
+            }
+        });
     }
 
     @Override
     @SuppressWarnings({"java:S2975", "java:S1182"})
     public Client clone() {
-        var clonedAddress = Optional.ofNullable(address)
-                .map(a -> new Address(a.getId(), a.getStreet()))
-                .orElse(null);
-        var clonedPhones = phones.stream()
-                .map(phone -> new Phone(phone.getId(), phone.getNumber()))
+        Address clonedAddress = null;
+        if (this.address != null) {
+            clonedAddress = new Address(this.address.getId(), this.address.getStreet());
+            clonedAddress.setClient(this);
+        }
+
+        List<Phone> clonedPhones = this.phones.stream()
+                .map(phone -> {
+                    Phone clonedPhone = new Phone(phone.getId(), phone.getNumber());
+                    clonedPhone.setClient(this);
+                    return clonedPhone;
+                })
                 .toList();
-        return new Client(id, name, clonedAddress, clonedPhones);
+
+        Client clonedClient = new Client();
+        clonedClient.id = this.id;
+        clonedClient.name = this.name;
+        clonedClient.setAddress(clonedAddress);
+        clonedClient.setPhones(clonedPhones);
+
+        return clonedClient;
     }
 
     @Override
